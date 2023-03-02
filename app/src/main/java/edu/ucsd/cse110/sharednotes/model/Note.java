@@ -18,7 +18,6 @@ class TimestampAdapter extends TypeAdapter<Long> {
     @Override
     public void write(JsonWriter out, Long value) throws java.io.IOException {
         var instant = Instant.ofEpochSecond(value);
-        System.out.println(value);
         out.value(instant.toString());
     }
 
@@ -67,5 +66,9 @@ public class Note {
 
     public static Note fromJSON(String json) {
         return new Gson().fromJson(json, Note.class);
+    }
+
+    public String toJSON() {
+        return new Gson().toJson(this);
     }
 }
