@@ -2,6 +2,9 @@ package edu.ucsd.cse110.sharednotes.model;
 
 import android.util.Log;
 
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
+
 import com.google.gson.Gson;
 
 import okhttp3.OkHttpClient;
@@ -25,6 +28,23 @@ public class NoteAPI {
             instance = new NoteAPI();
         }
         return instance;
+    }
+
+    public MutableLiveData<Note> pullFromRemote(String title) {
+        MutableLiveData ans = new MutableLiveData();
+        String msg = title.replace(" ", "%20"); //ig this is the input string or name of note?
+        var request = new Request.Builder()
+                .url("https://sharednotes.goto.ucsd.edu/echo/" + msg)
+                .method("GET", null)
+                .build();
+        try(var response = client.newCall(request).execute()) {
+            var body = response.body().string();
+            Note toAdd = Note.fromJSON(body); //make a new note to add with the title and whatever was retrieved?
+            ans.setValue(toAdd); //add this to our mutablelivedata
+        } catch(Exception e) {
+            e.printStackTrace();
+        } //after this maybe we need to update local?
+        return ans;
     }
 
     /**
