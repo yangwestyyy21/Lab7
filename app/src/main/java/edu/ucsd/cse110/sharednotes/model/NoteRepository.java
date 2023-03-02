@@ -1,14 +1,13 @@
 package edu.ucsd.cse110.sharednotes.model;
 
-import android.os.FileUtils;
-import android.util.Log;
-
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.Observer;
 
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.List;
@@ -18,7 +17,6 @@ import com.google.gson.Gson;
 
 import org.json.JSONObject;
 
-import kotlin.NotImplementedError;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -111,17 +109,21 @@ public class NoteRepository {
         // TO TEST: make sure it updates a note from the server every 3 seconds
         //do this first here, get remote data from server into some variable, then refresh every 3 sec, maybe make this a method in noteAPI
         NoteAPI noteAPI = new NoteAPI();
-        MutableLiveData<Note> fromRemote = noteAPI.pullFromRemote(title);
-
+        var executor = Executors.newSingleThreadScheduledExecutor();
+        Future future; //copied this from lab 4 threading i guess
+        MutableLiveData<Note> fromRemote = new MutableLiveData<>();
+        future = executor.submit(() -> {
+            //here it says you need to not be on main thread
+            fromRemote.setValue(noteAPI.pullFromRemote(title).getValue());
+        });
         //unsure how to do the scheduledexecutorservice thread that polls every 3 seconds
         ScheduledFuture<?> clockFuture;
         final MediatorLiveData<Note> ans = new MediatorLiveData<>();
-        ans.addSource(ans, fromRemote::postValue);//not sure what to do here to add data source
-        var executor = Executors.newSingleThreadScheduledExecutor();
-        clockFuture = executor.scheduleAtFixedRate(() -> {
-            MutableLiveData<Note> newFromRemote = noteAPI.pullFromRemote(title);//sus
-            ans.postValue(newFromRemote.getValue());//this should set the liveData for the answer ans??, maybe need to swap variables
+        ans.addSource(fromRemote, ans::postValue);//not sure what to do here to add data source
 
+        clockFuture = executor.scheduleAtFixedRate(() -> {//sus
+            fromRemote.postValue(noteAPI.pullFromRemote(title).getValue());//this should set the liveData for the answer ans??, maybe need to swap variables
+//says cannot invoke setValue on a background thread
         }, 0, 3000, TimeUnit.MILLISECONDS);
 
         return ans;
@@ -132,7 +134,7 @@ public class NoteRepository {
 
         // TODO: Implement upsertRemote!
 
-        MediaType JSON = MediaType.get("application/json; charset=utf-8");
+        final MediaType JSON = MediaType.get("application/json; charset=utf-8");
         OkHttpClient client = new OkHttpClient();
 
         //mess with this until I can create API object
@@ -140,29 +142,33 @@ public class NoteRepository {
         //TO CREATE JSON OBJECT: do the following
         String url = "https://sharednotes.goto.ucsd.edu/"; //then also add title to the end?
         url = url + note.title;
-
-        String json = ""; //title, content, updatedat
         JSONObject jsonObject = new JSONObject();
         //Inserting key-value pairs into the json object
         try {
             jsonObject.put("title", note.title);
             jsonObject.put("content", note.content);
-            jsonObject.put("updatedAt", Long.toString(note.updatedAt)); //unsure if u need to change this;
+            jsonObject.put("updatedAt", note.updatedAt); //unsure if u need to change this;
         } catch(Exception e){
             throw new RuntimeException(e);
         }
-        json = jsonObject.toString(); //no idea how to read this as string, or if we need to do this as string
+        String json = jsonObject.toString(); //no idea how to read this as string, or if we need to do this as string
 
         RequestBody body = RequestBody.create(json, JSON);
         Request request = new Request.Builder()
                 .url(url)
                 .post(body)
                 .build();
-        try{ //this makes the httpclient execute the request?
-            client.newCall(request).execute();
-        } catch(Exception e){
-            throw new RuntimeException(e);
-        }
+
+        ExecutorService executor = Executors.newSingleThreadExecutor();//run this thing on different thread
+        Future future;
+        future = executor.submit(() -> {
+            try{ //this makes the httpclient execute the request?
+                client.newCall(request).execute();//error pops up here, throws a NetworkOnMainThreadException
+            } catch(Exception e){
+                throw new RuntimeException(e);
+            }
+        });
+
         //throw new NotImplementedError();
     }
 }

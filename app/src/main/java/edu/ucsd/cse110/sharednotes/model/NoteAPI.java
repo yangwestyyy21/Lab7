@@ -42,13 +42,13 @@ public class NoteAPI {
         MutableLiveData ans = new MutableLiveData();
         String msg = title.replace(" ", "%20"); //ig this is the input string or name of note?
         var request = new Request.Builder()
-                .url("https://sharednotes.goto.ucsd.edu/echo/" + msg)
+                .url("https://sharednotes.goto.ucsd.edu/notes/" + msg)
                 .method("GET", null)
                 .build();
         try(var response = client.newCall(request).execute()) {
             var body = response.body().string();
             Note toAdd = Note.fromJSON(body); //make a new note to add with the title and whatever was retrieved?
-            ans.setValue(toAdd); //add this to our mutablelivedata
+            ans.postValue(toAdd); //add this to our mutablelivedata
         } catch(Exception e) {
             e.printStackTrace();
         } //after this maybe we need to update local?
