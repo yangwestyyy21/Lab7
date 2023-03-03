@@ -29,7 +29,7 @@ public class NoteRepository {
         this.dao = dao;
     }
 
-    // Synced Methods
+    // Synced Methodsgi
     // ==============
 
     /**
@@ -110,18 +110,17 @@ public class NoteRepository {
         //do this first here, get remote data from server into some variable, then refresh every 3 sec, maybe make this a method in noteAPI
         NoteAPI noteAPI = new NoteAPI();
         var executor = Executors.newSingleThreadScheduledExecutor();
-        Future future; //copied this from lab 4 threading i guess
+
         MutableLiveData<Note> fromRemote = new MutableLiveData<>();
-        future = executor.submit(() -> {
+        var future = executor.submit(() -> fromRemote.setValue(noteAPI.pullFromRemote(title).getValue()));
+            //copied this from lab 4 threading i guess
             //here it says you need to not be on main thread
-            fromRemote.setValue(noteAPI.pullFromRemote(title).getValue());
-        });
+
         //unsure how to do the scheduledexecutorservice thread that polls every 3 seconds
-        ScheduledFuture<?> clockFuture;
         final MediatorLiveData<Note> ans = new MediatorLiveData<>();
         ans.addSource(fromRemote, ans::postValue);//not sure what to do here to add data source
 
-        clockFuture = executor.scheduleAtFixedRate(() -> {//sus
+        ScheduledFuture<?> clockFuture = executor.scheduleAtFixedRate(() -> {//sus
             fromRemote.postValue(noteAPI.pullFromRemote(title).getValue());//this should set the liveData for the answer ans??, maybe need to swap variables
 //says cannot invoke setValue on a background thread
         }, 0, 3000, TimeUnit.MILLISECONDS);
@@ -140,7 +139,7 @@ public class NoteRepository {
         //mess with this until I can create API object
 
         //TO CREATE JSON OBJECT: do the following
-        String url = "https://sharednotes.goto.ucsd.edu/"; //then also add title to the end?
+        String url = "https://sharednotes.goto.ucsd.edu/docs"; //then also add title to the end?
         url = url + note.title;
         JSONObject jsonObject = new JSONObject();
         //Inserting key-value pairs into the json object

@@ -42,7 +42,7 @@ public class NoteAPI {
         MutableLiveData ans = new MutableLiveData();
         String msg = title.replace(" ", "%20"); //ig this is the input string or name of note?
         var request = new Request.Builder()
-                .url("https://sharednotes.goto.ucsd.edu/notes/" + msg)
+                .url("https://sharednotes.goto.ucsd.edu/docs" + msg)
                 .method("GET", null)
                 .build();
         try(var response = client.newCall(request).execute()) {
