@@ -151,7 +151,7 @@ public class NoteRepository {
         //mess with this until I can create API object
 
         //TO CREATE JSON OBJECT: do the following
-        String url = "https://sharednotes.goto.ucsd.edu/docs"; //then also add title to the end?
+        String url = "https://sharednotes.goto.ucsd.edu/notes/"; //then also add title to the end?
         url = url + note.title;
         JSONObject jsonObject = new JSONObject();
         //Inserting key-value pairs into the json object
