@@ -1,5 +1,7 @@
 package edu.ucsd.cse110.sharednotes.model;
 
+import android.util.Log;
+
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.MutableLiveData;
@@ -22,6 +24,7 @@ import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
+import okhttp3.Response;
 
 public class NoteRepository {
     private final NoteDao dao;
@@ -124,7 +127,8 @@ public class NoteRepository {
         var executor = Executors.newSingleThreadScheduledExecutor();
 
         MutableLiveData<Note> fromRemote = new MutableLiveData<>();
-        var future = executor.submit(() -> fromRemote.setValue(noteAPI.pullFromRemote(title).getValue()));
+        //var future =
+        executor.submit(() -> fromRemote.setValue(noteAPI.pullFromRemote(title).getValue()));
             //copied this from lab 4 threading i guess
             //here it says you need to not be on main thread
 
@@ -145,7 +149,7 @@ public class NoteRepository {
 
         // TODO: Implement upsertRemote!
 
-        final MediaType JSON = MediaType.get("application/json; charset=utf-8");
+        final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
         OkHttpClient client = new OkHttpClient();
 
         //mess with this until I can create API object
@@ -158,7 +162,7 @@ public class NoteRepository {
         try {
             jsonObject.put("title", note.title);
             jsonObject.put("content", note.content);
-            jsonObject.put("version", note.version); //unsure if u need to change this;
+            jsonObject.put("version", Long.toString(note.version)); //unsure if u need to change this;
         } catch(Exception e){
             throw new RuntimeException(e);
         }
@@ -167,19 +171,21 @@ public class NoteRepository {
         RequestBody body = RequestBody.create(json, JSON);
         Request request = new Request.Builder()
                 .url(url)
-                .post(body)
+                .put(body)
                 .build();
 
+
         ExecutorService executor = Executors.newSingleThreadExecutor();//run this thing on different thread
-        Future future;
-        future = executor.submit(() -> {
+        //Future future;
+        //future =
+        executor.submit(() -> {
             try{ //this makes the httpclient execute the request?
-                client.newCall(request).execute();//error pops up here, throws a NetworkOnMainThreadException
+                Response r = client.newCall(request).execute();
+                Log.i("UPSERT", request.toString());
+                Log.i("UPSERT_BODY", body.toString());
             } catch(Exception e){
                 throw new RuntimeException(e);
             }
         });
-
-        //throw new NotImplementedError();
     }
 }

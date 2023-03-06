@@ -49,9 +49,11 @@ public class NoteAPI {
             var body = response.body().string();
             Note toAdd = Note.fromJSON(body); //make a new note to add with the title and whatever was retrieved?
             ans.postValue(toAdd); //add this to our mutablelivedata
+            Log.i("Pull", body);
         } catch(Exception e) {
             e.printStackTrace();
         } //after this maybe we need to update local?
+
         return ans;
     }
 
