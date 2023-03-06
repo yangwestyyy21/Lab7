@@ -39,7 +39,7 @@ public class NoteRepository {
      * updated when the note is updated either locally or remotely on the server. Our activities
      * however will only need to observe this one LiveData object, and don't need to care where
      * it comes from!
-     *
+     * <p>
      * This method will always prefer the newest version of the note.
      *
      * @param title the title of the note
@@ -52,7 +52,7 @@ public class NoteRepository {
             var ourNote = note.getValue();
             if (theirNote == null) return; // do nothing
             if (ourNote == null || ourNote.version < theirNote.version) {
-                upsertLocal(theirNote);
+                upsertLocal(theirNote, false);
             }
         };
 
@@ -80,9 +80,15 @@ public class NoteRepository {
         return dao.getAll();
     }
 
-    public void upsertLocal(Note note) {
+    public void upsertLocal(Note note, boolean incrementVersion) {
+        // We don't want to increment when we sync from the server, just when we save.
+        if (incrementVersion) note.version = note.version + 1;
         note.version = note.version + 1;
         dao.upsert(note);
+    }
+
+    public void upsertLocal(Note note) {
+        upsertLocal(note, true);
     }
 
     public void deleteLocal(Note note) {
